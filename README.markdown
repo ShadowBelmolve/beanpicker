@@ -35,20 +35,20 @@ My machine:
 The speed with 10000 requests # time / requests per second / cpu load
 
 *  MRI 1.9.2
-  *  With fork: 117.85 / 84.85 / 100%
-  *  Without fork: 4.14s / 2415 / 30%
+   *  With fork: 117.85 / 84.85 / 100%
+   *  Without fork: 4.14s / 2415 / 30%
 *  MRI 1.8.7
-  *  With fork: 122.27 / 81.78 / 58%
-  *  Without fork: 6.34 / 1577 / 30~40%
+   *  With fork: 122.27 / 81.78 / 58%
+   *  Without fork: 6.34 / 1577 / 30~40%
 *  REE 1.8.7
-  *  With fork: 121.92 / 82.02 / 20~60%
-  *  Without fork: 4.77 / 2096 / 30%
+   *  With fork: 121.92 / 82.02 / 20~60%
+   *  Without fork: 4.77 / 2096 / 30%
 * JRuby 1.5.6 + OpenJDK 6.2b0\_1.9.3 VM 1.6.0\_20
-  *  With fork: don't accept fork?
-  *  Without fork: 10.99 / 909.91 / 97%
+   *  With fork: don't accept fork?
+   *  Without fork: 10.99 / 909.91 / 97%
 * Rubinius 1.2.0
-  *  With fork: don't try, too much errors
-  *  Without fork: 11.24 / 889 / 36~52%
+   *  With fork: don't try, too much errors
+   *  Without fork: 11.24 / 889 / 36~52%
 
 Fork is activated by default, it should slow down your application but keep safe of memory leaks.
 
