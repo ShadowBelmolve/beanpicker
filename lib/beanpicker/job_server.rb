@@ -25,8 +25,8 @@ module Beanpicker
         f = {}
         for child in worker.childs
           c += 1
-          f[child.job] ||= 0
-          f[child.job] += 1
+          f[child.job_name] ||= 0
+          f[child.job_name] += 1
         end
         for job in f.keys.sort
           m << " #{job}##{f[job]}"
@@ -95,8 +95,9 @@ module Beanpicker
 
     def job(name, args={}, &blk)
       opts = { 
-        :childs   => 1,
-        :log_file => nil
+        :childs   => Beanpicker::default_childs_number,
+        :log_file => nil,
+        :fork     => Beanpicker::default_fork
       }.merge(args)
 
       @childs += Child.process(name, opts, &blk)
@@ -113,16 +114,18 @@ module Beanpicker
       end
 
 
-      attr_reader :job, :number
+      attr_reader :job_name, :number
       def initialize(job, opts, number, &blk)
-        @job       = job
-        @opts      = opts
+        @job_name  = job
+        @opts      = { :fork => false }.merge(opts)
         @number    = number
         @blk       = blk
         @loop      = nil
         @pid       = nil
         @beanstalk = Beanpicker::new_beanstalk
         @run       = true
+        @job       = nil
+        @fork      = @opts[:fork]
         start_watch
         start_loop
       end
@@ -132,9 +135,9 @@ module Beanpicker
       end
 
       def start_watch
-        beanstalk.watch(@job)
+        beanstalk.watch(@job_name)
         beanstalk.list_tubes_watched.each do |server, tubes|
-          tubes.each { |tube| beanstalk.ignore(tube) unless tube == @job }
+          tubes.each { |tube| beanstalk.ignore(tube) unless tube == @job_name }
         end
       end
 
@@ -150,63 +153,84 @@ module Beanpicker
       end
 
       def start_work(child)
-        ppid = Process.pid
-        @pid = fork do
-          BEANPICKER_CLIENT_JOB[:child] = true
-          $0 = "[Beanpicker Child] #{@job}##{@number}"
-          Thread.new do
-            begin
-              while true
-                Process.kill 0, ppid
-                sleep 1
-              end
-            rescue Errno::ESRCH
-              Kernel.exit
-            end
-          end
+        fork do
+          BEANPICKER_CLIENT_JOB[:child] = true if @fork
+          $0 = "[Beanpicker Child] #{@job_name}##{@number}" if @fork
 
           begin
-            job = child.beanstalk.reserve
-            BEANPICKER_CLIENT_JOB[:job] = job
-            data  = job.ybody
-            pp data
+            @job = child.beanstalk.reserve
+            BEANPICKER_CLIENT_JOB[:job] = @job if @fork
+            data  = @job.ybody
 
             if not data.is_a?(Hash) or [:args, :next_jobs] - data.keys != []
               data = { :args => data, :next_jobs => [] }
             end
 
+            t=Time.now
+            debug "Running #{@job_name}##{@number} with args #{data[:args]}; next jobs #{data[:next_jobs]}"
             r = @blk.call(data[:args].clone)
+            debug "Job #{@job_name}##{@number} finished in #{Time.now-t} seconds with return #{r}"
             data[:args].merge!(r) if r.is_a?(Hash)
 
-            job.delete
-            job = nil
+            @job.delete
 
-            Beanpicker.enqueue(data[:next_jobs], data[:args]) unless data[:next_jobs].empty?
+            Beanpicker.enqueue(data[:next_jobs], data[:args]) if r and not data[:next_jobs].empty?
           rescue => e
-            fatal Beanpicker::exception_message(e, "in loop of child")
-            job.bury rescue nil
+            fatal Beanpicker::exception_message(e, "in loop of #{@job_name}##{@number} with pid #{Process.pid}")
+            @job.bury rescue nil
+          ensure
+            @job = nil
           end
         end
-        Process.waitpid @pid
-        @pid = nil
+      end
+
+      def fork(&blk)
+        if @fork
+          ppid = Process.pid
+          @pid = Kernel.fork do
+
+            #hack for forked child die when parent receive a KILL(headshot?)
+            Thread.new do
+              begin
+                while true
+                  Process.kill 0, ppid
+                  sleep 1
+                end
+              rescue Errno::ESRCH
+                Kernel.exit
+              end
+            end
+
+            blk.call
+
+          end
+          Process.waitpid @pid
+          @pid = nil
+        else
+          blk.call
+        end
       end
 
       def die!
         @run = false
         @loop.kill if @loop and @loop.alive?
-        if @pid
-          debug "Killing child with pid #{@pid}"
-          Process.kill "TERM", @pid
-          Thread.new do
-            sleep 1
-            Process.kill "KILL", @pid
+        if @fork
+          if @pid
+            debug "Killing child with pid #{@pid}"
+            Process.kill "TERM", @pid
+            Thread.new do
+              sleep 1
+              Process.kill "KILL", @pid
+            end
+            begin
+              Process.kill 0, @pid
+              Process.waitpid @pid
+            rescue Errno::ESRCH, Errno::ECHILD
+              return
+            end
           end
-          begin
-            Process.kill 0, @pid
-            Process.waitpid @pid
-          rescue Errno::ESRCH
-            return
-          end
+        else
+          @job.bury rescue nil if @job
         end
       end
 

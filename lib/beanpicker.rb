@@ -135,6 +135,22 @@ module Beanpicker
     @@default_ttr = v
   end
 
+  def default_childs_number
+    @@default_childs_number ||= 1
+  end
+
+  def default_childs_number=(v)
+    @@default_childs_number = v
+  end
+
+  def default_fork
+    defined?(@@default_fork) ? @@default_fork : true
+  end
+
+  def default_fork=(v)
+    @@default_fork = !!v
+  end
+
   def workers
     @@workers ||= []
   end
