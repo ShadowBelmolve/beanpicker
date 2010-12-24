@@ -36,7 +36,7 @@ The speed with 10000 requests # time / requests per second / cpu load
 
 *  MRI 1.9.2
    *  With fork: 117.85 / 84.85 / 100%
-   *  Without fork: 4.14s / 2415 / 30%
+   *  Without fork: 4.14 / 2415 / 30%
 *  MRI 1.8.7
    *  With fork: 122.27 / 81.78 / 58%
    *  Without fork: 6.34 / 1577 / 30~40%
@@ -64,13 +64,6 @@ You can easy active or desactive the fork for a job with:
     end
 
 The :fork argument overwrite the global Beanpicker::default\_fork
-
-
-When you need a fucking high speed. Here with raw Beanstalk(beanstalk-client, not stalker) I can handle 1000 querys in 2s, but with Beanpicker I can handle only 1000 querys in 10s.
-
-The largest reason to this is the fork that consume some time.
-
-So think, if you need a extreme high response time, you shouldn't use Beanpicker, but if you need at maximum a high(100 times per second?) response time and a more stable memory management you can use Beanpicker
 
 ## Queueing jobs
 
