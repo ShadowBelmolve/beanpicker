@@ -39,5 +39,5 @@ end
 #   This will call all the three jobs
 #
 #   Beanpicker.enqueue(["sandwich.make", "sandwich.sell", "sandwich.ingredients.recalcule"], :for => "Raphael")
-#   This will call the two first jobs, but not the third. Raphael don't have money to buy a sandwich, so the second job will return false
-#     and Beanpicker will break the chain
+#   This will call the two first jobs, but not the third. Raphael don't have money to buy a sandwich, so the
+#     second job will return false and Beanpicker will break the chain
