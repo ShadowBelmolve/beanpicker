@@ -37,6 +37,11 @@ parser = OptionParser.new do |opts|
     Beanpicker::default_fork_master = a
   end
 
+  opts.on('-c', '--childs-number-default N', Integer, "The number of childs every job should have",
+         "Default is 1") do |n|
+    Beanpicker::default_childs_number = n > 1 ? n : 1
+  end
+
   opts.on('-l', '--logger [FILE]', "Redirect messages to file", "Default is STDOUT") do |f|
     Beanpicker::log_handler = f || STDOUT
   end
