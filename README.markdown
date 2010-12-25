@@ -123,6 +123,37 @@ If you have a task that requires more than one step just pass an array of queues
 
 Inside of a job you can use debug, info, warn, error and fatal. It will be redirected to logger(STDOUT by default)
 
+## Options
+
+### Global options
+
+All options are inside of module Beanpicker
+
+*   Used for jobs:
+   *   Global:
+      *   default\_fork\_every: If should fork a job and destroy every time It will run. This options is overwrited by specified job options. Default true
+      *   default\_fork\_master: If should fork the child process. This options is overwrited by specified job options. Default false
+      *   fork\_every: Like default\_fork\_every, but overwrite job options. Default nil
+      *   fork\_master: Like default\_fork\_master, but overwrite job options. Default nil
+      *   default\_childs\_number: How much childs should be started for every job? Default 1
+   *   In job file(not function):
+      *   log\_file : Use a own log file, this file should be used to all jobs, except the ones who specify a :log\_file
+   *   In 'job' function:
+      *   :fork\_every : Overwrite default\_fork\_every and is overwrited by fork\_every
+      *   :fork\_master : Overwrite default\_fork\_master and is overwrited by fork\_master
+      *   :fork : Overwrite :fork\_every and :fork\_master, expect :every to every=true and master=false, :master to every=false and master=true or other value(any) to every=false and master=false. The result can be overwrited by fork\_master and fork\_every.
+      *   :log\_file : Use a own log file
+*   Used for enqueue
+   *   Global
+      *   default\_pri: The priority of job. Default 65536
+      *   default\_delay: The delay to start the job. Default 0
+      *   default\_ttr: The time to run the job. Default is 120
+   *   In 'enqueue' function
+      *   :pri
+      *   :delay
+      *   :ttr
+
+
 ## Using combine
 
 Beanpicker ships with "combine", "A Beanpicker server"
