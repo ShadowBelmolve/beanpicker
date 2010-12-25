@@ -124,13 +124,16 @@ module Beanpicker
         @beanstalk   = Beanpicker::new_beanstalk
         @run         = true
         @job         = nil
-        if @opts[:fork] and Beanpicker::fork_every.nil? and Beanpicker::fork_master.nil?
-          @fork_every  = @opts[:fork].to_s == 'every'
-          @fork_master = @opts[:fork].to_s == 'master'
+        fork_every = fork_master = nil
+        if @opts[:fork]
+          fork_every  = @opts[:fork].to_s == 'every'
+          fork_master = @opts[:fork].to_s == 'master'
         else
-          @fork_every  = Beanpicker::fork_every.nil?  ? !!@opts[:fork_every]  : Beanpicker::fork_every
-          @fork_master = Beanpicker::fork_master.nil? ? !!@opts[:fork_master] : Beanpicker::fork_master
+          fork_every  = !!@opts[:fork_every]
+          fork_master = !!@opts[:fork_master]
         end
+        @fork_every  = Beanpicker::fork_every.nil?  ? fork_every  : Beanpicker::fork_every
+        @fork_master = Beanpicker::fork_master.nil? ? fork_master : Beanpicker::fork_master
         @fork_master_pid = nil
         @fork_every_pid  = nil
         start_watch
