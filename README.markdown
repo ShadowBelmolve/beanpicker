@@ -121,6 +121,17 @@ If you have a task that requires more than one step just pass an array of queues
 
 Inside of a job you can use debug, info, warn, error and fatal. It will be redirected to logger(STDOUT by default)
 
+## Using combine
+
+Beanpicker ships with "combine", "A Beanpicker server"
+
+Try combine --help to see all options
+
+e.g. command:
+
+    combine -r config.rb -l log/jobs.log sandwich\_jobs.rb email\_jobs.rb
+
+
 ## Multiple Beanstalk servers
 
 Beanpicker look in ENV variables BEANSTALK\_URL and BEANSTALK\_URLS.
