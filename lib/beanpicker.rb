@@ -161,6 +161,22 @@ module Beanpicker
     @@default_for_master = !!v
   end
 
+  def fork_every
+    defined?(@@fork_every) ? @@fork_every : nil
+  end
+
+  def fork_every=(v)
+    @@fork_every = !!v
+  end
+
+  def fork_master
+    defined?(@@fork_master) ? @@fork_master : nil
+  end
+
+  def fork_master=(v)
+    @@fork_master = !!v
+  end
+
   def workers
     @@workers ||= []
   end

@@ -17,12 +17,22 @@ parser = OptionParser.new do |opts|
     require File.expand_path(f)
   end
 
-  opts.on('-e', '--[-no]fork-every', "Run every job in their own process?", "Avoid memory leaks. Default is true") do |e|
-    Beanpicker::default_fork_every = e
+  opts.on('-e', '--[no-]fork-every', "Run every job in their own process?",
+          "Avoid memory leaks. Default is true", "This option overwrite the options of jobs") do |e|
+    Beanpicker::fork_every = e
   end
 
-  opts.on('-m', '--[-no]fork-master', "Run every child in their own process?", "Default is false") do |m|
-    Beanpicker::default_fork_master = m
+  opts.on('-m', '--[no-]fork-master', "Run every child in their own process?",
+          "Default is false", "This option overwrite the options of jobs") do |m|
+    Beanpicker::fork_master = m
+  end
+
+  opts.on('-y', '--[no-]fork-every-default', "Same of -e, but don't overwrite jobs options") do |y|
+    Beanpicker::default_fork_every = y
+  end
+
+  opts.on('-a', '--[no-]fork-master-default', "Same of -m, but do'nt overwrite jobs options") do |a|
+    Beanpicker::default_fork_master = a
   end
 
   opts.on('-l', '--logger [FILE]', "Redirect messages to file", "Default is STDOUT") do |f|

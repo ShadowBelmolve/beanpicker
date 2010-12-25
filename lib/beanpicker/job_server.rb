@@ -95,14 +95,7 @@ module Beanpicker
     end
 
     def job(name, args={}, &blk)
-      opts = { 
-        :childs      => Beanpicker::default_childs_number,
-        :log_file    => nil,
-        :fork_every  => Beanpicker::default_fork_every,
-        :fork_master => Beanpicker::default_fork_master
-      }.merge(args)
-
-      @childs += Child.process(name, opts, &blk)
+      @childs += Child.process(name, args, &blk)
     end
 
     class Child
@@ -120,6 +113,7 @@ module Beanpicker
       def initialize(job, opts, number, &blk)
         @job_name    = job
         @opts        = {
+          :childs      => Beanpicker::default_childs_number,
           :fork_every  => Beanpicker::default_fork_every,
           :fork_master => Beanpicker::default_fork_master
         }.merge(opts)
@@ -130,12 +124,12 @@ module Beanpicker
         @beanstalk   = Beanpicker::new_beanstalk
         @run         = true
         @job         = nil
-        if @opts[:fork]
+        if @opts[:fork] and Beanpicker::fork_every.nil? and Beanpicker::fork_master.nil?
           @fork_every  = @opts[:fork].to_s == 'every'
           @fork_master = @opts[:fork].to_s == 'master'
         else
-          @fork_every  = !!@opts[:fork_every]
-          @fork_master = !!@opts[:fork_master]
+          @fork_every  = Beanpicker::fork_every.nil?  ? !!@opts[:fork_every]  : Beanpicker::fork_every
+          @fork_master = Beanpicker::fork_master.nil? ? !!@opts[:fork_master] : Beanpicker::fork_master
         end
         @fork_master_pid = nil
         @fork_every_pid  = nil
