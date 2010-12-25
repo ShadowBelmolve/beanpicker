@@ -2,16 +2,16 @@
 
 
 # It's a slow job, so we'll spawn 10 forks
-# fork is enabled by default
-job "sandwich.make", :childs => 10, :fork => true do |args|
+# It'll be forked every time
+job "sandwich.make", :childs => 10, :fork => :every do |args|
   debug "Making a sandwich to #{args[:for]}"
   # very slow job
   id = 10
   { :id => id }
 end
 
-# This is as fast job and don't make memory leaks, so We'll not use fork
-job "sandwich.sell", :fork => false do |args|
+# This is as fast job and don't make memory leaks, so We'll fork once
+job "sandwich.sell", :fork => :master do |args|
   debug "Selling the sandwich #{args[:id]} to #{args[:for]}"
   #client = Client.find_by_name(args[:for])
   #sandwich = Sandwich.find(args[:id])
@@ -25,8 +25,8 @@ job "sandwich.sell", :fork => false do |args|
   end
 end
 
-# fast job but make memory leaks, so We'll use fork
-job "sandwich.ingredients.recalcule", :childs => 3, :fork => true do |args|
+# fast job but make memory leaks, so We'll fork every time
+job "sandwich.ingredients.recalcule", :childs => 3, :fork => :every do |args|
   debug "Recalculating the ingredients of sandwich #{args[:id]} sold to #{args[:for]} in sale #{args[:sale_id]}"
   #Ingredients.recalcule_based_on_sale(args[:sale_id])
 end

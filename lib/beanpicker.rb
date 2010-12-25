@@ -143,12 +143,20 @@ module Beanpicker
     @@default_childs_number = v
   end
 
-  def default_fork
-    defined?(@@default_fork) ? @@default_fork : true
+  def default_fork_every
+    defined?(@@default_fork_every) ? @@default_fork_every : true
   end
 
-  def default_fork=(v)
-    @@default_fork = !!v
+  def default_fork_every=(v)
+    @@default_fork_every = !!v
+  end
+
+  def default_fork_master
+    defined?(@@default_fork_master) ? @@default_fork_master : false
+  end
+
+  def default_fork_master=(v)
+    @@default_for_master = !!v
   end
 
   def workers

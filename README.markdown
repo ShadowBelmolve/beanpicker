@@ -32,7 +32,8 @@ My machine:
 *  4GB RAM DDR3
 *  Arch Linux x86-64
 
-The speed with 10000 requests # time / requests per second / cpu load
+The speed with 10000 requests given with fork is :fork => :every and without is :fork => :master/false
+\# time / requests per second / cpu load
 
 *  MRI 1.9.2
    *  With fork: 117.85 / 84.85 / 100%
@@ -56,14 +57,28 @@ You can easy active or desactive the fork for a job with:
 
     job "job.without.fork", :fork => false do |args|
       debug "Running on a thread in main process"
+      warn "This process will grow becausa of any job running on main process"
     end
 
-    job "job.with.fork", :fork => true do |args|
-      debug "Running on a fork of main process"
+    job "job.with.fork.every.time", :fork => :every do |args|
+      debug "Running on a fork of main process or a forked child"
       debug "This process will be killed on end of this job"
+      debug "This decrease the peformance but save from memory leaks"
+      debug "All extra memory used by this process will vanish in end"
     end
 
-The :fork argument overwrite the global Beanpicker::default\_fork
+    job "job.with.fork.once", :fork => :master do |args|
+      debug "Running on a fork of main process"
+      debug "This process will not be killed on end of this job"
+      debug "This increase the performance but don't save from memory leaks"
+      debug "This process will only grow in memory because of code executed in 'job.with.fork.once'"
+    end
+
+You can pass :fork\_every => true(default)/false and :fork\_master => true/false(default)
+
+The :fork argument overwrite :fork\_every and :fork\_master
+
+The default :fork\_every and :fork\_master are setted on Beanpicker::default\_fork\_[master|every]
 
 ## Queueing jobs
 
