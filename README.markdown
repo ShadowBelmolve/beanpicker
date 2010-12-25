@@ -81,6 +81,8 @@ The :fork argument overwrite :fork\_every and :fork\_master
 
 The default :fork\_every and :fork\_master are setted on Beanpicker::default\_fork\_[master|every]
 
+Beanpicker::fork\_every and Beanpicker::fork\_master overwrite the job options, so, if you set they false the jobs will run in the main thread even if they specify the :fork, :fork\_every and/or :fork\_master
+
 ## Queueing jobs
 
 From anywhere in your app:
