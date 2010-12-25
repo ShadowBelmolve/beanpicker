@@ -129,7 +129,7 @@ Try combine --help to see all options
 
 e.g. command:
 
-    combine -r config.rb -l log/jobs.log sandwich\_jobs.rb email\_jobs.rb
+    combine -r config.rb -l log/jobs.log sandwich_jobs.rb email_jobs.rb
 
 
 ## Multiple Beanstalk servers
