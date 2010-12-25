@@ -186,7 +186,7 @@ module Beanpicker
         fork do
           begin
             @job = child.beanstalk.reserve
-            BEANPICKER_FORK[:job] = @job if @fork
+            BEANPICKER_FORK[:job] = @job if BEANPICKER_FORK[:child_every]
             data  = @job.ybody
 
             if not data.is_a?(Hash) or [:args, :next_jobs] - data.keys != []
@@ -197,14 +197,18 @@ module Beanpicker
             debug "Running #{@job_name}##{@number} with args #{data[:args]}; next jobs #{data[:next_jobs]}"
             r = @blk.call(data[:args].clone)
             debug "Job #{@job_name}##{@number} finished in #{Time.now-t} seconds with return #{r}"
-            data[:args].merge!(r) if r.is_a?(Hash)
+            data[:args].merge!(r) if r.is_a?(Hash) and data[:args].is_a?(Hash)
 
             @job.delete
 
             Beanpicker.enqueue(data[:next_jobs], data[:args]) if r and not data[:next_jobs].empty?
           rescue => e
             fatal Beanpicker::exception_message(e, "in loop of #{@job_name}##{@number} with pid #{Process.pid}")
-            @job.bury rescue nil
+            if BEANPICKER_FORK[:child_every]
+              exit
+            else
+              Thread.new(@job) { |j| j.bury rescue nil }
+            end
           ensure
             @job = nil
           end
