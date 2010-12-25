@@ -109,7 +109,7 @@ module Beanpicker
       end
 
 
-      attr_reader :job_name, :number
+      attr_reader :job_name, :number, :fork_every, :fork_master, :fork_every_pid, :fork_master_pid, :opts
       def initialize(job, opts, number, &blk)
         @job_name    = job
         @opts        = {
@@ -120,20 +120,18 @@ module Beanpicker
         @number      = number
         @blk         = blk
         @loop        = nil
-        @pid         = nil
         @beanstalk   = Beanpicker::new_beanstalk
         @run         = true
         @job         = nil
-        fork_every = fork_master = nil
         if @opts[:fork]
-          fork_every  = @opts[:fork].to_s == 'every'
-          fork_master = @opts[:fork].to_s == 'master'
+          _fork_every  = @opts[:fork].to_s == 'every'
+          _fork_master = @opts[:fork].to_s == 'master'
         else
-          fork_every  = !!@opts[:fork_every]
-          fork_master = !!@opts[:fork_master]
+          _fork_every  = !!@opts[:fork_every]
+          _fork_master = !!@opts[:fork_master]
         end
-        @fork_every  = Beanpicker::fork_every.nil?  ? fork_every  : Beanpicker::fork_every
-        @fork_master = Beanpicker::fork_master.nil? ? fork_master : Beanpicker::fork_master
+        @fork_every  = Beanpicker::fork_every.nil?  ? _fork_every  : Beanpicker::fork_every
+        @fork_master = Beanpicker::fork_master.nil? ? _fork_master : Beanpicker::fork_master
         @fork_master_pid = nil
         @fork_every_pid  = nil
         start_watch
