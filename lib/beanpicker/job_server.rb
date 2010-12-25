@@ -54,6 +54,14 @@ module Beanpicker
       sleep 1 while true
     end
 
+    def log_handler
+      Beanpicker::log_handler
+    end
+
+    def log_handler=(v)
+      Beanpicker::log_handler=(v)
+    end
+
   end
 
   class Worker
@@ -95,22 +103,30 @@ module Beanpicker
     end
 
     def job(name, args={}, &blk)
-      @childs += Child.process(name, args, &blk)
+      @childs += Child.process(name, args, self, &blk)
+    end
+
+    def log_handler
+      @log_handler || Beanpicker::log_handler
+    end
+
+    def log_file(f)
+      log_handler = f
     end
 
     class Child
 
       include MsgLogger
 
-      def self.process(job, opts, &blk)
-        (opts[:childs]).times.map do |i|
-          Child.new(job, opts, i, &blk)
+      def self.process(job, opts, worker=nil, &blk)
+        (opts[:childs] || Beanpicker::default_childs_number).times.map do |i|
+          Child.new(job, opts, i, worker, &blk)
         end
       end
 
 
-      attr_reader :job_name, :number, :fork_every, :fork_master, :fork_every_pid, :fork_master_pid, :opts
-      def initialize(job, opts, number, &blk)
+      attr_reader :job_name, :number, :fork_every, :fork_master, :fork_every_pid, :fork_master_pid, :opts, :worker
+      def initialize(job, opts, number, worker=nil, &blk)
         @job_name    = job
         @opts        = {
           :childs      => Beanpicker::default_childs_number,
@@ -123,6 +139,7 @@ module Beanpicker
         @beanstalk   = Beanpicker::new_beanstalk
         @run         = true
         @job         = nil
+        @worker      = worker
         if @opts[:fork]
           _fork_every  = @opts[:fork].to_s == 'every'
           _fork_master = @opts[:fork].to_s == 'master'
@@ -130,6 +147,7 @@ module Beanpicker
           _fork_every  = !!@opts[:fork_every]
           _fork_master = !!@opts[:fork_master]
         end
+        log_handler = @opts[:log_file] if @opts[:log_file]
         @fork_every  = Beanpicker::fork_every.nil?  ? _fork_every  : Beanpicker::fork_every
         @fork_master = Beanpicker::fork_master.nil? ? _fork_master : Beanpicker::fork_master
         @fork_master_pid = nil
@@ -276,6 +294,10 @@ module Beanpicker
           end
           BEANPICKER_FORK[:job].bury rescue nil if BEANPICKER_FORK[:job]
         end
+      end
+
+      def log_handler
+        @log_handler || @worker.nil? ? Beanpicker::log_handler : @worker.log_handler
       end
 
     end

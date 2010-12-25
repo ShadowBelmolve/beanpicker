@@ -46,12 +46,12 @@ module Beanpicker
     end
 
     def log_handler=(v)
-      if v.is_a?(String)
+      if [String, IO].include?(v.class)
         @log_handler = ::Logger.new(v)
       else
         for m in [:debug, :info, :warn, :error, :fatal]
           unless v.respond_to?(m)
-            error "Logger #{v} don't respond to #{m}. Ignoring!"
+            error "Logger #{v} don't respond to #{m}. Aborting!"
             return
           end
         end
