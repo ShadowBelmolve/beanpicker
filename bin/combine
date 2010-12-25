@@ -1,6 +1,71 @@
 #!/usr/bin/env ruby
 
+require 'optparse'
 require File.expand_path( File.join(File.dirname(__FILE__), "..", "lib", "beanpicker", "job_server") )
+
+_opts = nil
+
+parser = OptionParser.new do |opts|
+  _opts = opts
+  
+  opts.banner = 'combine is a beanpicker server'
+  opts.separator ''
+  opts.separator "e.g. #{$0} -r default.rb -em -l log/out.log sandwhich_jobs.rb email_jobs.rb"
+  opts.separator ''
+
+  opts.on('-r', '--require FILE', "Require a file to be loaded before the workers") do |f|
+    require File.expand_path(f)
+  end
+
+  opts.on('-e', '--[-no]fork-every', "Run every job in their own process?", "Avoid memory leaks. Default is true") do |e|
+    Beanpicker::default_fork_every = e
+  end
+
+  opts.on('-m', '--[-no]fork-master', "Run every child in their own process?", "Default is false") do |m|
+    Beanpicker::default_fork_master = m
+  end
+
+  opts.on('-l', '--logger [FILE]', "Redirect messages to file", "Default is STDOUT") do |f|
+    Beanpicker::log_handler = f || STDOUT
+  end
+
+  opts.on_tail('-h', '--help', "Show this message and exit") do
+    puts opts
+    exit
+  end
+
+  opts.on_tail('-v', '--version', "Show the version and exit") do
+    puts "beanpicker version: #{Beanpicker::VERSION_STRING}"
+    exit
+  end
+
+end
+
+begin
+  parser.parse!(ARGV)
+rescue => e
+  STDERR.puts "Error when parsing options.\n#{e.message}\n\n"
+  puts _opts
+  exit
+end
+
+if ARGV.empty?
+  puts "You should specify at least a file with jobs to run"
+  puts _opts
+  exit
+end
+
+for file in ARGV
+  if File.exists?(file)
+    if not File.readable?(file)
+      puts "File #{file} exits but isn't readable!"
+      exit
+    end
+  else
+    puts "File #{file} don't exists!"
+    exit
+  end
+end
 
 server = Beanpicker::Server.new(ARGV)
 server.run

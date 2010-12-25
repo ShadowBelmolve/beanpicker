@@ -5,6 +5,8 @@ require 'logger'
 
 $:.unshift( File.expand_path(File.dirname(__FILE__)) )
 
+require 'beanpicker/version'
+
 module Beanpicker
 
   extend self
