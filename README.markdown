@@ -32,7 +32,8 @@ My machine:
 *  4GB RAM DDR3
 *  Arch Linux x86-64
 
-The speed with 10000 requests given with fork is :fork => :every and without is :fork => :master/false
+The speed with 10000 requests given 'with fork' is :fork => :every and 'without fork' is :fork => :master/false
+
 \# time / requests per second / cpu load
 
 *  MRI 1.9.2
@@ -51,17 +52,17 @@ The speed with 10000 requests given with fork is :fork => :every and without is 
    *  With fork: don't try, too much errors
    *  Without fork: 11.24 / 889 / 36~52%
 
-Fork is activated by default, it should slow down your application but keep safe of memory leaks.
+Fork is activated by default, it should slow down your application but keep safe from memory leaks.
 
 You can easy active or desactive the fork for a job with:
 
     job "job.without.fork", :fork => false do |args|
       debug "Running on a thread in main process"
-      warn "This process will grow becausa of any job running on main process"
+      warn "This process will grow because of any job running on main process"
     end
 
     job "job.with.fork.every.time", :fork => :every do |args|
-      debug "Running on a fork of main process or a forked child"
+      debug "Running on a fork of main process"
       debug "This process will be killed on end of this job"
       debug "This decrease the peformance but save from memory leaks"
       debug "All extra memory used by this process will vanish in end"
