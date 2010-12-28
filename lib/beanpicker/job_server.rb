@@ -123,7 +123,7 @@ module Beanpicker
 
 
       attr_reader :job_name, :number, :fork_every, :fork_master, :fork_every_pid, :fork_master_pid, :opts, :worker
-      def initialize(job, opts, number, worker=nil, &blk)
+      def initialize(job, opts={}, number=0, worker=nil, &blk)
         @job_name    = job
         @opts        = {
           :childs      => Beanpicker::default_childs_number,
@@ -179,7 +179,7 @@ module Beanpicker
         start_work(child) while @run
       end
 
-      def start_work(child)
+      def start_work(child=self)
         fork do
           begin
             @job = child.beanstalk.reserve

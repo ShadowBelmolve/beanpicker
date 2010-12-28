@@ -167,7 +167,7 @@ module Beanpicker
   end
 
   def fork_every=(v)
-    @@fork_every = !!v
+    @@fork_every = v.nil? ? nil : !!v
   end
 
   def fork_master
@@ -175,7 +175,7 @@ module Beanpicker
   end
 
   def fork_master=(v)
-    @@fork_master = !!v
+    @@fork_master = v.nil? ? nil : !!v
   end
 
   def workers

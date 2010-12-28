@@ -2,9 +2,32 @@ require 'spec_helper'
 
 describe Beanpicker do
 
+  before(:all) do
+    Beanpicker::default_fork_every = false
+    Beanpicker::default_fork_master = false
+  end
+
   before(:each) do
     @beanstalk = Beanpicker::beanstalk
-    Beanpicker::workers.clear
+    @ms = { :values => {}, :methods => [:default_fork_every,
+                                       :default_fork_master,
+                                       :fork_every,
+                                       :fork_master,
+                                       :default_childs_number] }
+    for m in @ms[:methods]
+      @ms[:values][m] = Beanpicker.send(m)
+    end
+
+    Thread.stub!(:new)
+    Kernel.stub!(:fork)
+    Process.stub!(:waitpid)
+  end
+
+  after(:each) do
+    for m in @ms[:methods]
+      Beanpicker.send("#{m}=", @ms[:values][m])
+    end
+    Beanpicker::workers.replace []
   end
 
   context "Getters and Setters" do
@@ -176,124 +199,198 @@ describe Beanpicker do
     Beanpicker::stop_workers
   end
 
+  describe Beanpicker::Worker do
 
-end
-
-describe Beanpicker::Worker do
-
-  after(:each) do
-    Beanpicker::workers.clear
-  end
-
-  it "should handle a error when loading a file" do
-    pending "don't know how make"
-    Beanpicker::Worker.should_receive(:error)
-    Beanpicker::Worker.new("/foo/bar/lol.rb")
-  end
-
-  it "should handle a error when evaluating a block" do
-    pending "don't know how make"
-    Beanpicker::Worker.new do
-      foo
-    end
-  end
-
-  it "should add itself to workers list" do
-    expect { Beanpicker::Worker.new }.should change(Beanpicker::workers, :count).by(1)
-    Beanpicker::workers.should include(Beanpicker::Worker.new)
-  end
-
-  it "job should call Child.process" do
-    w=Beanpicker::Worker.new
-    Beanpicker::Worker::Child.should_receive(:process).and_return([1])
-    expect { w.job("foo.bar") }.should change(w.childs, :count).by(1)
-  end
-
-  context "log_handler" do
-
-    it "should use global log_handler if haven't it own defined" do
-      l = Logger.new(STDOUT)
-      Beanpicker.should_receive(:log_handler).twice.and_return(l)
-      l.should_receive(:debug)
-      w = Beanpicker::Worker.new
-      w.log_handler.should be_equal(l)
-      w.debug("foo!")
+    it "should handle a error when loading a file" do
+      pending "don't know how make"
+      Beanpicker::Worker.should_receive(:error)
+      Beanpicker::Worker.new("/foo/bar/lol.rb")
     end
 
-    it "should use it own log_handler if defined" do
+    it "should handle a error when evaluating a block" do
+      pending "don't know how make"
+      Beanpicker::Worker.new do
+        foo
+      end
+    end
+
+    it "should add itself to workers list" do
+      expect { Beanpicker::Worker.new }.should change(Beanpicker::workers, :count).by(1)
+      Beanpicker::workers.should include(Beanpicker::Worker.new)
+    end
+
+    it "job should call Child.process" do
       w=Beanpicker::Worker.new
-      w.should_receive(:debug)
-      w.log_handler = STDOUT
-      w.debug("foo!")
+      Beanpicker::Worker::Child.should_receive(:process).and_return([1])
+      expect { w.job("foo.bar") }.should change(w.childs, :count).by(1)
     end
 
-    it "should use log_file as a mirror to log_handler" do
-      w=Beanpicker::Worker.new
-      w.should_receive(:log_handler=)
-      w.log_file 'foo'
+    context "log_handler" do
+
+      it "should use global log_handler if haven't it own defined" do
+        l = Logger.new(STDOUT)
+        Beanpicker.should_receive(:log_handler).twice.and_return(l)
+        l.should_receive(:debug)
+        w = Beanpicker::Worker.new
+        w.log_handler.should be_equal(l)
+        w.debug("foo!")
+      end
+
+      it "should use it own log_handler if defined" do
+        w=Beanpicker::Worker.new
+        w.should_receive(:debug)
+        w.log_handler = STDOUT
+        w.debug("foo!")
+      end
+
+      it "should use log_file as a mirror to log_handler" do
+        w=Beanpicker::Worker.new
+        w.should_receive(:log_handler=)
+        w.log_file 'foo'
+      end
+
+    end
+
+  end
+
+  describe Beanpicker::Worker::Child do
+
+
+    def c(*a, &blk)
+      Beanpicker::Worker::Child.new(*a, &blk)
+    end
+
+    context "Child.process"do
+
+      it "should create one child by default" do
+        Beanpicker::Worker::Child.process("foo").count.should be_equal(1)
+      end
+
+      it "should respect default_childs_number if no option :childs is passed" do
+        Beanpicker::default_childs_number = 3
+        Beanpicker::Worker::Child.process("foo").count.should be_equal(3)
+      end
+
+      it "should respect :childs if passed" do
+        Beanpicker::Worker::Child.process("foo", { :childs => 3 }).count.should be_equal(3)
+      end
+
+    end
+
+    context "new" do
+
+      it "should create it own beanstalk instance" do
+        b = Beanpicker::new_beanstalk
+        Beanpicker.should_receive(:new_beanstalk).and_return(b)
+        c("foo", {}, 1)
+      end
+
+      it "should define job_name, number and opts and worker" do
+        j = "foo"
+        n = 1
+        o = { :foo => :bar }
+        w = mock("Worker")
+        child = c(j, o, n, w)
+        child.job_name.should be_equal(j)
+        child.number.should be_equal(n)
+        child.opts.should_not be_equal(o)
+        child.opts[:foo].should be_equal(o[:foo])
+        child.worker.should be_equal(w)
+      end
+
+      it "should understand :fork_every and :fork_master" do
+        c = c("foo", { :fork_every => true, :fork_master => true })
+        c.fork_every.should be_true
+        c.fork_master.should be_true
+      end
+
+      it "should overwrite :fork_every and :fork_master with :fork" do
+        c1 = c("foo", { :fork_every => false, :fork_master => true, :fork => :every })
+        c2 = c("foo", { :fork_every => true, :fork_master => false, :fork => :master })
+        c1.fork_every.should be_true
+        c1.fork_master.should be_false
+        c2.fork_every.should be_false
+        c2.fork_master.should be_true
+      end
+
+    end
+
+    it "should watch only the tube with job_name" do
+      c = c("foo")
+      b = c.beanstalk
+      b.watch("bar")
+      b.should_receive(:watch).with("foo")
+      b.should_receive(:ignore).with("bar")
+      c.start_watch
+    end
+
+    context "start_loop" do
+
+      it "should call fork_master_child_and_monitor if have fork_master" do
+        c=c("foo", :fork_master => true)
+        c.should_receive(:fork_master_child_and_monitor)
+        c.start_loop
+      end
+
+      it "should call Thread.new if haven't fork_master" do
+        Thread.should_receive(:new)
+        c=c("foo", :fork_master => false)
+      end
+
+    end
+
+    context "fork" do
+
+      it "should call Kernel.fork if have fork_every" do
+        c=c("foo", :fork_every => true)
+        Kernel.should_receive(:fork).once.and_return(0)
+        c.fork {}
+      end
+
+      it "should call only block if haven't fork_every" do
+        c=c("foo", :fork_every => false)
+        b = proc {}
+        Kernel.should_receive(:fork).exactly(0).times
+        b.should_receive(:call).once
+        c.fork(&b)
+      end
+
+    end
+
+    context "start_work" do
+
+      before(:each) do
+        @beanstalk.yput({ :foo => :bar })
+        @job = @beanstalk.reserve
+      end
+
+      it "should reserve and delete a job" do
+        c=c("foo"){}
+        c.beanstalk.should_receive(:reserve).once.and_return(@job)
+        @job.should_receive(:ybody).once.and_return({})
+        @job.should_receive(:delete).once
+        c.should_receive(:fatal).exactly(0).times
+        c.start_work
+      end
+
+      it "should bury the job if got a eror" do
+        c=c("foo"){ raise RuntimeError }
+        @job.should_receive(:delete).exactly(0).times
+        c.beanstalk.should_receive(:reserve).and_return(@job)
+        Thread.should_receive(:new).once.with(@job)
+        c.start_work
+      end
+
+      it "should do chain jobs if receive a positive return from block" do
+        c=c("foo"){ true }
+        Beanpicker.should_receive(:enqueue)
+        c.beanstalk.yput({ :args => { :foo => :bar }, :next_jobs => ["foo"]})
+        c.start_work
+      end
+
     end
 
   end
 
 end
 
-describe Beanpicker::Worker::Child do
-
-  before(:each) do
-    Beanpicker::default_fork_every = false
-    Beanpicker::default_fork_master = false
-    Thread.stub!(:new)
-    Kernel.stub!(:fork)
-  end
-
-  after(:each) do
-    Beanpicker::workers.clear
-  end
-
-  def c(*a)
-    Beanpicker::Worker::Child.new(*a)
-  end
-
-  context "Child.process"do
-
-    it "should create one child by default" do
-      Beanpicker::Worker::Child.process("foo").count.should be_equal(1)
-    end
-
-    it "should respect default_childs_number if no option :childs is passed" do
-      n = Beanpicker::default_childs_number
-      Beanpicker::default_childs_number = 3
-      Beanpicker::Worker::Child.process("foo").count.should be_equal(3)
-      Beanpicker::default_childs_number = n
-    end
-
-    it "should respect :childs if passed" do
-      Beanpicker::Worker::Child.process("foo", { :childs => 3 }).count.should be_equal(3)
-    end
-
-  end
-
-  context "new" do
-
-    it "should create it own beanstalk instance" do
-      b = Beanpicker::new_beanstalk
-      Beanpicker.should_receive(:new_beanstalk).and_return(b)
-      c("foo", {}, 1)
-    end
-
-    it "should define job_name, number and opts and worker" do
-      j = "foo"
-      n = 1
-      o = { :foo => :bar }
-      w = mock("Worker")
-      child = c(j, o, n, w)
-      child.job_name.should be_equal(j)
-      child.number.should be_equal(n)
-      child.opts.should_not be_equal(o)
-      child.opts[:foo].should be_equal(o[:foo])
-      child.worker.should be_equal(w)
-    end
-
-  end
-
-end
