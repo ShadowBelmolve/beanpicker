@@ -72,7 +72,7 @@ class TCPSocket
       @_queue << "RESERVED #{n} #{@jobs[n].length}\r\n"
       @jobs[n] + "\r\n"
     when /^delete (\d+)\r\n$/ then
-      @job.delete $1
+      @jobs.delete $1
       "DELETED\r\n"
     when /^release (\d+) (\d+) (\d+)\r\n$/ then
       "RELEASED\r\n"

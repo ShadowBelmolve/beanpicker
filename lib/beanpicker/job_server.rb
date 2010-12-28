@@ -144,7 +144,8 @@ module Beanpicker
           _fork_every  = !!@opts[:fork_every]
           _fork_master = !!@opts[:fork_master]
         end
-        log_handler = @opts[:log_file] if @opts[:log_file]
+        #really need self
+        self.log_handler = @opts[:log_file] unless @opts[:log_file].nil?
         @fork_every  = Beanpicker::fork_every.nil?  ? _fork_every  : Beanpicker::fork_every
         @fork_master = Beanpicker::fork_master.nil? ? _fork_master : Beanpicker::fork_master
         @fork_master_pid = nil
@@ -298,7 +299,8 @@ module Beanpicker
       end
 
       def log_handler
-        @log_handler || @worker.nil? ? Beanpicker::log_handler : @worker.log_handler
+        #'@log_handler || ' go to worker/global log_handler even if @log_handler is defined
+        defined?(@log_handler) ? @log_handler : @worker.nil? ? Beanpicker::log_handler : @worker.log_handler
       end
 
     end
