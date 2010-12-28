@@ -1,4 +1,7 @@
-Process.module_eval do
+# Process Premium Version + Crack + Serial + two new methods
+module Process
+
+  # Verify if a process is running
   def self.running?(pid)
     begin
       Process.kill 0, pid
@@ -8,6 +11,7 @@ Process.module_eval do
     end
   end
 
+  # Create a thread to kill the current process if the parent process die
   def self.die_with_parent
     Thread.new do
       while Process.running?(Process.ppid)
