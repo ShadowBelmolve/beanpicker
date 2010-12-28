@@ -69,19 +69,20 @@ module Beanpicker
       o[:delay] || default_delay,
       o[:ttr]   || default_ttr
     ]
-    if jobs.is_a?(Array)
-      raise ArgumentError, "you need at least 1 job" if jobs.empty?
-      job = jobs.shift
-    else
-      job = jobs.to_s
-      jobs = []
-    end
+
+    jobs = [jobs.to_s] unless jobs.is_a?(Array)
+    jobs.compact!
+    raise ArgumentError, "you need at least 1 job" if jobs.empty?
+    job = jobs.first
 
     beanstalk.use(job)
-    beanstalk.yput({ :args => args, :next_jobs => jobs}, *opts)
+    beanstalk.yput({ :args => args, :next_jobs => jobs[1..-1]}, *opts)
   rescue Beanstalk::NotConnected => e
-    exception_message(e, "You have a problem with beanstalkd.\nIs it running?")
+    raise e if defined?(r)
+    r = true
+    error exception_message(e, "You have a problem with beanstalkd.\nIs it running?")
     @@beanstalk = new_beanstalk
+    retry
   end
 
   def beanstalk
@@ -93,7 +94,7 @@ module Beanpicker
   end
 
   def beanstalk_urls
-    urls = [ENV['BEANSTALK_URL'], ENV['BEANSTALK_URLS']].compact.join(",").split(",") do |url|
+    urls = [ENV['BEANSTALK_URL'], ENV['BEANSTALK_URLS']].compact.join(",").split(",").map do |url|
       if url =~ /^beanstalk:\/\//
         uri = URI.parse(url)
         url = "#{uri.host}:#{uri.port}"
@@ -158,7 +159,7 @@ module Beanpicker
   end
 
   def default_fork_master=(v)
-    @@default_for_master = !!v
+    @@default_fork_master = !!v
   end
 
   def fork_every
@@ -191,5 +192,6 @@ module Beanpicker
         child.die!
       end
     end
+    workers.clear
   end
 end

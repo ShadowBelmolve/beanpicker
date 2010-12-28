@@ -68,8 +68,7 @@ module Beanpicker
 
     include MsgLogger
 
-    attr_accessor :childs
-    attr_reader :name
+    attr_reader :name, :reader, :childs
 
     def initialize(filepath=nil, args={}, &blk)
       @childs = []
@@ -98,12 +97,9 @@ module Beanpicker
       Beanpicker::add_worker(self)
     end
 
-    def work_loop
-      loop { sleep 1 }
-    end
-
     def job(name, args={}, &blk)
-      @childs += Child.process(name, args, self, &blk)
+      @childs << Child.process(name, args, self, &blk)
+      @childs.flatten!
     end
 
     def log_handler
@@ -111,14 +107,15 @@ module Beanpicker
     end
 
     def log_file(f)
-      log_handler = f
+      #without self call don't call log_handler= of this class Oo
+      self.log_handler = f
     end
 
     class Child
 
       include MsgLogger
 
-      def self.process(job, opts, worker=nil, &blk)
+      def self.process(job, opts={}, worker=nil, &blk)
         (opts[:childs] || Beanpicker::default_childs_number).times.map do |i|
           Child.new(job, opts, i, worker, &blk)
         end
