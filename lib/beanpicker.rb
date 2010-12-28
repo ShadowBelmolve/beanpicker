@@ -182,7 +182,7 @@ module Beanpicker
 
   # Return the default number of childs that a Worker should create(1 by default)
   #
-  # This is used by Worker::Child.process
+  # This is used by Worker::Child::process
   def default_childs_number
     @@default_childs_number ||= 1
   end
